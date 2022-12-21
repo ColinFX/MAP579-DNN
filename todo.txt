@@ -1,0 +1,12 @@
+In activatefunction, one should manage properly with or without reference with or without const like in last pc (8)
+Vu qu'il va falloir utiliser des gradients ils faudrait utiliser des variables 
+Prochaine étape: code les loss
+maybe add a print vector method somewhere
+To do today: finish variable, suppress expression and test it with activation function.
+Also adapt activate function so that it works with variable.
+As unitary operators on variable or else add: +, -, *, /, exp, log, sin , cos, tan, cosh, tanh, sinh, and their inverse.
+As n-th operators: define linear combination
+Also organise code est très important
+
+pour les opérateurs on aimerait pouvoir écrire 2*x où x est une variable mais il faut faire une conversion avant donc mal ?
+Le réseau de neuronnes ne devraient être qu'une façon de voir les choses, on devrait pouvoir accéder directement à toutes les variables
