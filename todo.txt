@@ -10,3 +10,12 @@ Also organise code est très important
 
 pour les opérateurs on aimerait pouvoir écrire 2*x où x est une variable mais il faut faire une conversion avant donc mal ?
 Le réseau de neuronnes ne devraient être qu'une façon de voir les choses, on devrait pouvoir accéder directement à toutes les variables
+
+
+Dans softmax faire attention aux différents types que nous pouvons avoir
+Ce serait bien de faire toutes les déduction de type avant!!!!!!!! les calculs car sinon on fait souvent la même chose*
+
+
+Gros problème : 2*vecteur appelle la structure n_arry il faut préciser le 2.
+
+

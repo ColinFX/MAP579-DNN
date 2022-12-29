@@ -22,6 +22,7 @@ endif()
 
 set(SRCS
     variable.hpp
+    matrix.hpp
     main.cpp)
 
 set(PROJECT_NEURAL_NETWORKS projectneuralnetworks)

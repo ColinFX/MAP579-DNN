@@ -3,6 +3,8 @@
 #ifndef VARIABLE_HPP
 #define VARIABLE_HPP
 
+
+#include "matrix.hpp"
 #include<vector>
 #include<iostream>
 #include<cmath>
@@ -41,21 +43,43 @@ runtime_get(Tuple&& t,size_t index){
 
 
 template <class T>
+struct derivate_type
+{
+    using type=T;
+};
+template <>
+struct derivate_type<column_vector>
+{
+    using type=matrix;
+};
+
+template <class T>
+using derivative_type_t = typename derivate_type<T>::type;
+
+
+
+template <class T>
 class variable
 {
     public:
-        variable(T value_output, T derivative_output);
-        variable(T value_output);
+        variable(const T& value_output, const derivative_type_t<T>& derivative_output);
+        explicit variable(const T& value_output);
         template <class E>
         variable(const E& e);
         T value() const;
-        T derivative() const;
+        derivative_type_t<T> derivative() const;
+        void activate(bool, std::size_t);
         void activate(bool);
+        std::size_t size();
+        template <class E>
+        E& operator()(std::size_t i);
     private:
         T m_value;
-        T m_derivative;
+        derivative_type_t<T> m_derivative;
 };
 
+template <class T>
+void print(const variable<T>& v);
 
 template <class F, class... T>
 class n_ary_op
@@ -114,9 +138,11 @@ public:
         return (std::get<0>(e)).derivative() - (std::get<1>(e)).derivative();
     }
 };
+
+
 /*
 template <class E, class W, class... Etail, class... Wtail>
-class linearcombination
+class linear_combination
 {public:
 
     auto value(const E& e, const Etail...& etail, const W& w, const Wtail...& wtail) const
@@ -141,8 +167,38 @@ class linearcombination<Eonly, Wonly>
     {
         return e.value()*w.derivative()+e.derivative()*w.value();
     }
-}
-*/
+}*/
+
+
+template <class E, class W>
+class linear_combination
+{public:
+
+    auto value(const std::vector<W>& w, const E& e) const
+    {
+        W res_value=0.;///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        for(std::size_t i=0; i<e.size(); i++)
+        {
+            res_value+=w[i]*e.value()[i];
+        }
+        return res_value;
+    }
+
+    auto derivative(const std::vector<W>& w, const E& e) const
+    {
+        W res_derivative=0.;///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        for(std::size_t i=0; i<e.size(); i++)
+        {
+            res_derivative+=w[i]*e.derivative()[i];
+        }
+        return res_derivative;
+    }
+};
+
+
+
+
+
 template <class E1, class E2>
 class binary_multiply
 {
@@ -248,10 +304,10 @@ unary_op<unary_log<E>, E> log(const E& e);
 ////////////////////////////////////////////////////
 
 template <class T>
-variable<T>::variable(T value_output, T derivative_output):m_value(value_output), m_derivative(derivative_output)
+variable<T>::variable(const T& value_output, const derivative_type_t<T>& derivative_output):m_value(value_output), m_derivative(derivative_output)
 {};
 template<class T>
-variable<T>::variable(T value_output): m_value(value_output), m_derivative(0)
+variable<T>::variable(const T& value_output): m_value(value_output), m_derivative(0)
 {};
 template <class T>
 template <class E>    
@@ -263,11 +319,45 @@ void variable<T>::activate(bool b)
 {
     m_derivative=b;
 }
+
+template <class T> 
+void variable<T>::activate(bool b, std::size_t i)
+{
+    m_derivative[i]=b;
+}
+
 template <class T>
 T variable<T>::value() const{return m_value;}
 template <class T>
-T variable<T>::derivative() const{return m_derivative;}
+derivative_type_t<T> variable<T>::derivative() const{return m_derivative;}
 
+
+template <class T>
+std::ostream& operator<<(std::ostream& out, const variable<T>& v)
+{
+   return out<<"value: "<<std::endl<<v.value()<<"derivative: "<<std::endl<<v.derivative();
+}
+
+template <class T>
+template <class E>
+E& variable<T>::operator()(std::size_t i){return *this;}
+
+template <>
+template <class E>
+E& variable<column_vector>::operator()(std::size_t i){return variable(m_value(i), m_derivative(i));}
+
+
+template <class T>
+std::size_t variable<T>::size(){return 1;}
+template <>
+std::size_t variable<column_vector>::size(){return m_value.size();}
+
+
+template <class T>
+void print(const variable<T>& v)
+{
+    std::cout<<v<<std::endl;
+}
 ////////////////////////////////////////////////////
 //operations on variable
 ////////////////////////////////////////////////////
@@ -297,6 +387,8 @@ unary_op<unary_exp<E>, E> exp(const E& e)
 template <class E>
 unary_op<unary_log<E>, E> log(const E& e)
 {return unary_op<unary_log<E>, E>(e);}
+
+
 ////////////////////////////////////////////////////
 //n_ary_op
 ////////////////////////////////////////////////////
