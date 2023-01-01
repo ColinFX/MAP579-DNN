@@ -10,3 +10,6 @@ class uvector
         std::vector<double> m_data;
 
 };
+
+double a=5;
+enum class suit {a};

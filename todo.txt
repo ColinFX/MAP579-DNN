@@ -19,3 +19,8 @@ Ce serait bien de faire toutes les déduction de type avant!!!!!!!! les calculs 
 Gros problème : 2*vecteur appelle la structure n_arry il faut préciser le 2.
 
 
+Add value(std::size_t i= et derivative pour les variable de vecteur colonnes
+I will need an easy way to instantiate the neural network
+
+Two options: abandon variable<double> in favour of variable<column_vector> easier or define something which holds up to all this
+or for activate function implement them as I did operations and act_func_class will inherit from something which will be result of activate_function() (BBBBest)
