@@ -30,7 +30,6 @@ using decay_column_vector_t =  typename decay_column_vector<T>::type;
 
 
 
-
 template<
     typename Tuple,
     typename Indices=std::make_index_sequence<std::tuple_size<Tuple>::value>>

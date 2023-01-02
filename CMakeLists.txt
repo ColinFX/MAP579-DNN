@@ -23,7 +23,10 @@ endif()
 set(SRCS
     variable.hpp
     matrix.hpp
-    main.cpp)
+    main.cpp parser.hpp)
+
+add_subdirectory(csv-parser)
 
 set(PROJECT_NEURAL_NETWORKS projectneuralnetworks)
 add_executable(${PROJECT_NEURAL_NETWORKS} ${SRCS})
+target_link_libraries(${PROJECT_NEURAL_NETWORKS} csv)
