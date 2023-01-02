@@ -24,3 +24,6 @@ I will need an easy way to instantiate the neural network
 
 Two options: abandon variable<double> in favour of variable<column_vector> easier or define something which holds up to all this
 or for activate function implement them as I did operations and act_func_class will inherit from something which will be result of activate_function() (BBBBest)
+
+
+test MSE might do unwanted conversion
