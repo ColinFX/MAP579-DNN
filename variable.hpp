@@ -95,8 +95,12 @@ class variable
         void activate(bool, std::size_t);
         void activate(bool);
         std::size_t size() const;
+    
         double& value(std::size_t i){return m_value(i);}
         double& derivative(std::size_t i, std::size_t j){return m_derivative(i, j);}
+    
+        double value(std::size_t i)const{return m_value(i);}
+        double derivative(std::size_t i, std::size_t j)const{return m_derivative(i, j);}
     private:
         T m_value;
         derivative_type_t<T> m_derivative;
@@ -259,6 +263,40 @@ class n_ary_linear_combination
         return res_derivative;
     }
 };
+
+template <class E>
+class n_ary_linear_combination_for_neurons // here the weights are seen as variables with derivative 1 with respect to themselves which did not appear in e and so are added to the derivative
+{public:
+
+    auto value(const column_vector& w, const E& e) const
+    {
+        double res_value=0.;
+        for(std::size_t i=0; i<e.size(); i++)
+        {
+            res_value+=w(i)*(e.value())(i);
+        }
+        return res_value;
+    }
+
+    auto derivative(const column_vector& w, const E& e) const
+    {
+        column_vector res_derivative(e.derivative().get_column()+w.size(), 0.);
+        for(std::size_t j=0; j<e.derivative().get_column(); j++)
+        {   
+            for(std::size_t i=0; i<e.size(); i++)
+            {
+                res_derivative(j)+=w(i)*e.derivative()(i, j);
+            }
+        }
+        for(std::size_t j=0; j<w.size(); j++)
+        {   
+                res_derivative(j)=e.value()(j);
+        }
+        return res_derivative;
+    }
+};
+
+
 template <class E>
 class add_double_class
 {
@@ -544,6 +582,10 @@ external_op<variable_divides_double_class<E>, double, E> operator/(double d, con
 template <class E>
 external_op<n_ary_linear_combination<E>, column_vector, E> linear_combination(const column_vector& w, const E& v)
 {return external_op<n_ary_linear_combination<E>, column_vector, E>(w, v);}
+
+template <class E>
+external_op<n_ary_linear_combination_for_neurons<E>, column_vector, E> linear_combination_for_neurons(const column_vector& w, const E& v)
+{return external_op<n_ary_linear_combination_for_neurons<E>, column_vector, E>(w, v);}
 
 
 template <class E>

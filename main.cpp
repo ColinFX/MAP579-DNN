@@ -22,6 +22,6 @@ int main()
     }
     
     neural_layer nlayer(n_vec);
-    variable<column_vector> var2 = nlayer.update(var);
+    variable<column_vector> var2 = nlayer.evaluate(var);
     print(var2);
 }

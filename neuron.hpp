@@ -36,6 +36,7 @@ class neural_layer
     public:
         neural_layer(const std::vector<neuron>&);
         neural_layer(std::size_t i):neuron_list(i){};
+        neural_layer():neural_layer(0){};
     
         neural_layer(neural_layer&& n);
         neural_layer(neural_layer& n);
@@ -54,7 +55,7 @@ column_vector get_weight(std::vector<neural_layer>);
 class neural_network
 {
     public:
-        neural_network(std::vector<neural_layer>, loss);
+        neural_network(std::vector<neural_layer>, loss_class);
     
         neural_network(neural_network&& n):layer_list(n.layer_list), lossfunc(n.lossfunc){};
         neural_network(neural_network& n);
@@ -62,21 +63,23 @@ class neural_network
         neural_network& operator=(const neural_network& n);
         neural_network& operator=(neural_network&& rhs);
     
-        variable<double> evaluate(data_type data);
-        //void gradient_descent(double epsilon);
+        variable<column_vector> evaluate(const column_vector& data);
+        variable<double> evaluate_loss(const column_vector& objective, const variable<column_vector>& var)const;
+        //void gradient_descent(double epsilon, const column_vector&, variable<column_vector> res_evaluate_loss);
         std::size_t size() const {return layer_list.size();}
         std::size_t size_layer(std::size_t i){return layer_list[i].size();}
         
+        void gradient_descent(std::size_t n_iterations, double epsilon, const column_vector& objective, const column_vector& data);
         
     private:
         std::vector<neural_layer> layer_list;
-        loss lossfunc;
+        loss_class lossfunc;
         
 };
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-////neural
+////neuron
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 neuron::neuron(column_vector weight, activation_function_class actfunc):m_weight(weight), m_actfunc(actfunc){};
 
@@ -100,7 +103,7 @@ neuron& neuron::operator=(neuron&& rhs)
 }
 variable<double> neuron::evaluate(const variable<column_vector>& var)
 {
-    return activation_function(m_actfunc, variable<double>(linear_combination(m_weight, var)));
+    return activation_function(m_actfunc, variable<double>(linear_combination_for_neurons(m_weight, var)));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -178,7 +181,7 @@ variable<column_vector> neural_layer::evaluate(const variable<column_vector>& ar
 ////neural network
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-neural_network::neural_network(std::vector<neural_layer> layer_list_arg, loss lossfunc_arg): layer_list(layer_list_arg), lossfunc(lossfunc_arg){};
+neural_network::neural_network(std::vector<neural_layer> layer_list_arg, loss_class lossfunc_arg): layer_list(layer_list_arg), lossfunc(lossfunc_arg){};
 
 neural_network::neural_network(neural_network& n)
 {
@@ -205,7 +208,7 @@ neural_network& neural_network::operator=(const neural_network& n)
     }
     return *this;
 }
-neural_network& neural_network::operator=(neural_network&& rhs)
+neural_network& neural_network::operator=(neural_network&& n)
 {
     layer_list.resize(n.size());
     for(std::size_t i=0; i<size(); i++)
@@ -219,44 +222,46 @@ neural_network& neural_network::operator=(neural_network&& rhs)
 
 
 
-variable<double> neural_network::evaluate(const variable<column_vector>& data)
+variable<column_vector> neural_network::evaluate(const column_vector& data)
 { 
-    variable<column_vector> propagated_variable(data);
-    for(std::size i=0; i<layer_list.size(); i++)
+    variable<column_vector> propagated_variable(data, matrix(0, 0, 0.));
+    for(std::size_t i=0; i<layer_list.size(); i++)
     {
         propagated_variable=layer_list[i].evaluate(propagated_variable);
     }
     return propagated_variable;
 }
 
-variable<double> neural_network::evaluate_loss const(const variable<column_vector>& var)
+variable<double> neural_network::evaluate_loss(const column_vector& objective, const variable<column_vector>& var)const
 { 
-    return lossfunc(var);
+    return loss_function(lossfunc, objective, var);
 }
 
 /*
 void neural_network::gradient_descent(double epsilon, variable<column_vector> res_evaluate_loss)
 {
+    std::size_t current_derivative_index = 0;
     for(std::size_t i=0; i<size(); i++)
     {
         for (std::size_t j=0; j<size_layer(i); j++
          {
             for(std::size_t k=0; k<layer_list[i][j].size(); k++)
             {
-                layer_list[i][j].weight(k) -= epsilon * res_evaluate_loss.derivative()(find_weight_in_derivative(i, j, k))
+                layer_list[i][j].weight(k) -= epsilon * res_evaluate_loss.derivative()(current_derivative_index);
+                current_derivative_index+=1;
             }
          }
     }
 }
-*/
-double neural_network::value()
-{
-    return final_value.value();
-}
 
-double neural_network::derivative()
+void gradient_descent(std::size_t n_iterations, double epsilon, const column_vector& objective, const column_vector& data)
 {
-    return final_value.derivative();
+    for(std::size_t i=0; i<n_iterations; i++)
+    {
+        gradient_descent(epsilon, evaluate_loss(objective, evaluate(data)));
+    }
 }
+*/
+
 
 #endif
