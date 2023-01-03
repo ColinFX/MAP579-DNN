@@ -194,6 +194,12 @@ unary_op<ReLu_class<T>, T> ReLu_function(T arg)
 {
     return unary_op<ReLu_class<T>, T>(arg);
 }
+
+double ReLu_function_value(double arg)
+{
+    return arg>0? arg:0.;
+}
+
 /*
 template <class T>
 class sigmoid_class//: //activate_function<T>
@@ -218,6 +224,12 @@ unary_op<sigmoid_class<T>, T> sigmoid_function(T arg)
 */
 template <class T>
 variable<double> sigmoid_function(T arg)
+{
+    return 1./(1.+exp(-arg));
+}
+
+
+double sigmoid_function_value(double arg)
 {
     return 1./(1.+exp(-arg));
 }
@@ -340,6 +352,21 @@ auto softmax_function(const T& arg)
     return unary_op<softmax_class<T>, T>(arg);
 }
 
+column_vector softmax_function_value(const column_vector& arg) 
+{
+    column_vector res(arg.size());
+    double denom =0.;
+    for(std::size_t i=0; i<arg.size(); i++)
+    {
+        denom+=arg(i);
+    }
+    for(std::size_t i=0; i<arg.size(); i++)
+    {
+        res(i)=std::exp(arg(i));
+    }
+    return res/denom;
+}
+
 /////////////////////////////////////////////////////////////
 // dictionary of activate functions
 /////////////////////////////////////////////////////////////
@@ -377,6 +404,25 @@ variable<column_vector> activation_function(activation_function_class act, varia
     if (act==activation_function_class::softmax)
         return softmax_function<variable<column_vector>>(args);
     else return variable<column_vector>();
+}
+
+
+template <class T>
+T activation_function_value(activation_function_class act, T args)
+{
+    if (act==activation_function_class::ReLu)
+        {return ReLu_function_value(args);}
+   else if (act==activation_function_class::sigmoid)
+        {return sigmoid_function_value(args);}
+    else return double();
+}
+
+template <>
+column_vector activation_function_value(activation_function_class act, column_vector args)
+{
+    if (act==activation_function_class::softmax)
+        return softmax_function_value(args);
+    else return column_vector();
 }
 
 

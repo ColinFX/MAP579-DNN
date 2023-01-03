@@ -9,54 +9,64 @@
 class binary_cross_entropy_class
 {
     public:
-        auto value(const column_vector& objective, const variable<column_vector>& arg) const
+        auto value(const std::vector<double>& objective, const std::vector<variable<column_vector>>& arg) const
         {
             double res_value = 0;
             std::size_t n = objective.size();
             for(std::size_t i=0; i<n; i++)
             {
-                res_value+=objective(i)*std::log(arg.value(i))+(1-objective(i)) * std::log(1 - arg.value(i));
+                res_value+=objective[i]*std::log(arg[i].value(0))+(1-objective[i]) * std::log(1 - arg[i].value(0));
             }
             return -res_value/double(n);
         }
     
-        auto derivative(const column_vector& objective, const variable<column_vector>& arg) const
+        auto derivative(const std::vector<double>& objective, const std::vector<variable<column_vector>>& arg) const
         {
-            column_vector res_derivative(arg.derivative().get_column(), 0.);
+            column_vector res_derivative(arg[0].derivative().get_column(), 0.);
             std::size_t n = objective.size();
-            for(std::size_t j=0; j<arg.derivative().get_column(); j++)
+            for(std::size_t j=0; j<arg[0].derivative().get_column(); j++)
                 for(std::size_t i=0; i<n; i++)
                 {
-                    res_derivative(j)+=objective(i)*arg.derivative(i, j)/arg.value(i)-(1-objective(i)) *arg.derivative(i, j)/ (1 - arg.value(i));
+                    res_derivative(j)+=objective[i]*arg[i].derivative(0, j)/arg[i].value(0)-(1-objective[i]) *arg[i].derivative(0, j)/ (1 - arg[i].value(0));
                 }
             return -res_derivative/double(n);
         }
 
 };
 
+double binary_cross_entropy_value(const std::vector<double>& objective, const std::vector<column_vector>& arg)
+{
+    double res_value = 0;
+    std::size_t n = objective.size();
+    for(std::size_t i=0; i<n; i++)
+    {
+        res_value+=objective[i]*std::log(arg[i](0))+(1-objective[i]) * std::log(1 - arg[i](0));
+    }
+    return -res_value/double(n);
+}
 
 class categorical_cross_entropy_class
 {
     public:
-        auto value(const column_vector& objective, const variable<column_vector>& arg) const
+        auto value(const std::vector<double>& objective, const std::vector<variable<column_vector>>& arg) const
         {
             double res_value = 0;
             std::size_t n = objective.size();
             for(std::size_t i=0; i<n; i++)
             {
-                res_value+= objective(i) * std::log(arg.value(i));
+                res_value+= objective[i] * std::log(arg[i].value(0));
             }
             return -res_value;
         }
-        auto derivative(const column_vector& objective, const variable<column_vector>& arg) const
+        auto derivative(const std::vector<double>& objective, const std::vector<variable<column_vector>>& arg) const
         {
-            column_vector res_derivative(arg.derivative().get_column(), 0.);
+            column_vector res_derivative(arg[0].derivative().get_column(), 0.);
             std::size_t n = objective.size();
-            for(std::size_t j=0; j<arg.derivative().get_column(); j++)
+            for(std::size_t j=0; j<arg[0].derivative().get_column(); j++)
             {
                 for(std::size_t i=0; i<n; i++)
                 {
-                    res_derivative(j)+= objective(i) * arg.derivative(i, j)/arg.value(i);
+                    res_derivative(j)+= objective[i] * arg[i].derivative(0, j)/arg[0].value(0);
                 }
             }
             return -res_derivative;
@@ -64,57 +74,132 @@ class categorical_cross_entropy_class
 };
 
 
-
-
-
-class MSE_class
-{
-    public:
-        auto value(const column_vector& objective, const variable<column_vector>& arg) const
+double categorical_cross_entropy_value(const std::vector<double>& objective, const std::vector<column_vector>& arg)
         {
             double res_value = 0;
             std::size_t n = objective.size();
             for(std::size_t i=0; i<n; i++)
             {
-                res_value+= pow(arg.value(i) -objective(i), 2);
+                res_value+= objective[i] * std::log(arg[i](0));
+            }
+            return -res_value;
+        }
+
+
+template <class E>
+class MSE_class
+{
+    public:
+        auto value(const std::vector<E>& objective, const std::vector<variable<column_vector>>& arg) const
+        {
+            double res_value = 0;
+            std::size_t n = objective.size();
+            for(std::size_t index_data=0; index_data<n; index_data++)
+            {
+                for(std::size_t i=0; i<objective[0].size(); i++)
+                {
+                    res_value+= pow(arg[index_data].value(i) -objective[index_data](i), 2);
+                }
             }
             return res_value/double(n);
         }
-        auto derivative(const column_vector& objective, const variable<column_vector>& arg) const
+        auto derivative(const std::vector<E>& objective, const std::vector<variable<column_vector>>& arg) const
         {
-            column_vector res_derivative(arg.derivative().get_column(), 0.);
+            column_vector res_derivative(arg[0].derivative().get_column(), 0.);
             std::size_t n = objective.size();
-            for(std::size_t j=0; j<arg.derivative().get_column(); j++)
+            for(std::size_t j=0; j<arg[0].derivative().get_column(); j++)
             {
-                for(std::size_t i=0; i<n; i++)
+                for(std::size_t index_data=0; index_data<n; index_data++)
                 {
-                    res_derivative+= 2. * (arg.value(i) - objective(i)) * arg.derivative(i, j);
+                    for(std::size_t i=0; i<objective[0].size(); i++)
+                    {
+                        res_derivative(j)+= 2. * (arg[index_data].value(i) - objective[index_data](i)) * arg[index_data].derivative(i, j);
+                    }
                 }
             }
             return res_derivative/double(n);
         }
-    
-
 };
+
+template <>
+class MSE_class<double>
+{
+    public:
+        auto value(const std::vector<double>& objective, const std::vector<variable<column_vector>>& arg) const
+        {
+            double res_value = 0;
+            std::size_t n = objective.size();
+            for(std::size_t index_data=0; index_data<n; index_data++)
+            {
+                    res_value+= pow(arg[index_data].value(0) -objective[index_data], 2);
+            }
+            return res_value/double(n);
+        }
+        auto derivative(const std::vector<double>& objective, const std::vector<variable<column_vector>>& arg) const
+        {
+            column_vector res_derivative(arg[0].derivative().get_column(), 0.);
+            std::size_t n = objective.size();
+            for(std::size_t j=0; j<arg[0].derivative().get_column(); j++)
+            {
+                for(std::size_t index_data=0; index_data<n; index_data++)
+                {
+                        res_derivative(j)+= 2. * (arg[index_data].value(0) - objective[index_data]) * arg[index_data].derivative(0, j);
+                }
+            }
+            return res_derivative/double(n);
+        }
+};
+
+template <class E>
+double MSE_value(const std::vector<E>& objective, const std::vector<column_vector>& arg) 
+{
+    double res_value = 0;
+    std::size_t n = objective.size();
+    for(std::size_t index_data=0; index_data<n; index_data++)
+    {
+        for(std::size_t i=0; i<objective[0].size(); i++)
+        {
+            res_value+= pow(arg[index_data](i) -objective[index_data](i), 2);
+        }
+    }
+    return res_value/double(n);
+}
+
+template <>
+
+double MSE_value<double>(const std::vector<double>& objective, const std::vector<column_vector>& arg) 
+{
+    double res_value = 0;
+    std::size_t n = objective.size();
+    for(std::size_t index_data=0; index_data<n; index_data++)
+    {
+            res_value+= pow(arg[index_data](0) -objective[index_data], 2);
+    }
+    return res_value/double(n);
+}
 
 
 ////////////////////////////////////////////////////////////////////////////////////////
 // Loss functions
 ////////////////////////////////////////////////////////////////////////////////////////
 
-external_op<binary_cross_entropy_class, column_vector, variable<column_vector>> binary_cross_entropy_function(const column_vector& objective, const variable<column_vector>& arg)
+variable<double> binary_cross_entropy_function(const std::vector<double>& objective, const std::vector<variable<column_vector>>& arg)
 {
-    return external_op<binary_cross_entropy_class, column_vector, variable<column_vector>>(objective, arg);
+    binary_cross_entropy_class m_f;
+    return variable<double>(m_f.value(objective, arg), m_f.derivative(objective, arg));
 }
 
-external_op<categorical_cross_entropy_class, column_vector, variable<column_vector>> categorical_cross_entropy_function(const column_vector& objective, const variable<column_vector>& arg)
+variable<double> categorical_cross_entropy_function(const std::vector<double>& objective, const std::vector<variable<column_vector>>& arg)
 {
-    return external_op<categorical_cross_entropy_class, column_vector, variable<column_vector>>(objective, arg);
+    categorical_cross_entropy_class m_f;
+    return variable<double>(m_f.value(objective, arg), m_f.derivative(objective, arg));
 }
 
-external_op<MSE_class, column_vector, variable<column_vector>> MSE_function(const column_vector& objective, const variable<column_vector>& arg)
+template <class E>
+variable<double> MSE_function(const std::vector<E>& objective, const std::vector<variable<column_vector>>& arg)
 {
-    return external_op<MSE_class, column_vector, variable<column_vector>>(objective, arg);
+    MSE_class<E> m_f;
+    return variable<double>(m_f.value(objective, arg), m_f.derivative(objective, arg));
 }
 
 
@@ -140,16 +225,29 @@ std::ostream& operator<<(std::ostream& out, const loss_class& loss)
 
 
 
-template <class T>
-variable<double> loss_function(loss_class loss, const column_vector& objective, T args)
+template <class E>
+variable<double> loss_function(loss_class loss, const std::vector<E>& objective, const std::vector<variable<column_vector>>& args)
 {
     if (loss==loss_class::binary_cross_entropy)
-        {return binary_cross_entropy_function(objective, variable<column_vector>(args));}
+        {return binary_cross_entropy_function(objective, args);}
    else if (loss==loss_class::categorical_cross_entropy)
-        {return categorical_cross_entropy_function(objective, variable<column_vector>(args));}
+        {return categorical_cross_entropy_function(objective, args);}
     else if (loss==loss_class::MSE)
-        {return categorical_cross_entropy_function(objective, variable<column_vector>(args));}
+        {return MSE_function<E>(objective, args);}
     else return variable<double>();
+}
+
+
+template <class E>
+double loss_function_value(loss_class loss, const std::vector<E>& objective, const std::vector<column_vector>& args)
+{
+    if (loss==loss_class::binary_cross_entropy)
+        {return binary_cross_entropy_value(objective, args);}
+   else if (loss==loss_class::categorical_cross_entropy)
+            {return categorical_cross_entropy_value(objective, args);}
+    else if (loss==loss_class::MSE)
+        {return MSE_value<E>(objective,args);}
+    else return 0.;
 }
 
 

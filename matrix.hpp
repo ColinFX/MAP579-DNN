@@ -11,6 +11,7 @@ class column_vector
 {
     public:
         column_vector(const std::vector<double>&);
+        column_vector(const std::initializer_list<double>&);
         column_vector(std::size_t);
         column_vector():column_vector(0){};
         column_vector(std::size_t, double value);
@@ -27,7 +28,8 @@ class column_vector
         column_vector& operator+=(const column_vector&);
         column_vector& operator*=(double);
         column_vector& operator/=(double);
-    
+        
+        void resize(std::size_t new_n_row){m_data.resize(new_n_row);n_row=new_n_row;}
         void vector_adress(){std::cout<<&m_data<<std::endl;}
     private:
         std::vector<double> m_data;
@@ -41,6 +43,9 @@ class matrix
 {
     public:
         matrix(const std::vector<double>&, std::size_t, std::size_t);
+        matrix(const std::initializer_list<std::initializer_list<double>>& double_list);
+        
+    
         matrix(std::size_t);
         matrix(std::size_t, std::size_t);
         matrix():matrix(0, 0){};
@@ -82,6 +87,19 @@ void print(const column_vector& m){std::cout<< m<<std::endl;}
 /// matrix
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 matrix::matrix(const std::vector<double>& data, std::size_t i, std::size_t j):m_data(data), n_row(i), n_column(j){};
+matrix::matrix(const std::initializer_list<std::initializer_list<double>>& double_list)
+        {
+            n_row = double_list.size();
+            if (n_row==0){n_column=0; m_data = std::vector<double>(0); return;}
+            n_column = double_list.begin()[0].size();
+            for(std::size_t i=0; i<n_row; i++)
+            {
+                for(std::size_t j=0; j<n_row; j++)
+                {
+                    m_data[i*n_column+n_row] = (double_list.begin()[i]).begin()[j];
+                }
+            }
+        };
 
 matrix::matrix(std::size_t i, std::size_t j):m_data(i*j, 0),n_row(i), n_column(j){};
 matrix::matrix(std::size_t i, std::size_t j, double value):m_data(i*j, value),n_row(i), n_column(j){};
@@ -253,9 +271,13 @@ double& column_vector::operator()(std::size_t i)
 {
     return m_data[i];
 }
+column_vector::column_vector(const std::initializer_list<double>& v):m_data(v), n_row(v.size()){};
+
 column_vector::column_vector(const std::vector<double>& v):m_data(v), n_row(v.size()){};
 column_vector::column_vector(std::size_t i):m_data(i, 0),n_row(i){};
 column_vector::column_vector(std::size_t i, double value):m_data(i, value),n_row(i){};
+
+
 
 column_vector::column_vector(const column_vector& m) :n_row(m.size())
 {

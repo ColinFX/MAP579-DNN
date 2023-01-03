@@ -3,25 +3,31 @@
 //#include "test.cpp"
 int main()
 {
+    neural_network n(5, {3, 4, 1}, loss_class::MSE, 
+        {
+            {activation_function_class::ReLu, activation_function_class::ReLu, activation_function_class::ReLu},
+            {activation_function_class::ReLu, activation_function_class::sigmoid, activation_function_class::ReLu, activation_function_class::ReLu},
+            {activation_function_class::sigmoid}
+        }
+    );
     
-    column_vector x({1, 2, 3});
-    matrix m({1, 2, 3, 4, 5, 6}, 3, 2);
-    column_vector weight({1, 2, 3});
-    variable<column_vector> var(x, m);
-    variable<double> res(linear_combination(weight, var));
-    
-    var.value(1) = 32;
-    var.derivative(1, 1) = 56;
-    
-    std::vector<neuron> n_vec(4);
-    
-    
-    for(std::size_t i=0; i<4; i++)
+    std::vector<column_vector> data(6);
+    std::vector<variable<column_vector>> extrapolate(6);
+    std::vector<double> objective(6);
+    for(std::size_t i=0; i<6;i++)
     {
-        n_vec[i] = neuron(weight, activation_function_class::sigmoid);
+        data[i] = column_vector({double(i), double(i+1), double(i+2), double(i+3), double(i+4)});
+        
+        extrapolate[i] = n.evaluate(data[i]);
+        std::cout<<"value of extrapolate["<<i<<"]: "<<std::endl; 
+        print(extrapolate[i]);
+
+        objective[i]  = i-3>0?i-3:3-i;
     }
     
-    neural_layer nlayer(n_vec);
-    variable<column_vector> var2 = nlayer.evaluate(var);
-    print(var2);
+    
+    variable<double> res_evaluate_loss = n.evaluate_loss(objective, extrapolate);
+    print(res_evaluate_loss.value());
+    
+    
 }
